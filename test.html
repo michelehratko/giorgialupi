@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Hover-Triggered Reflow + Paired Expand</title>
+  <style>
+    .masonry-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 10px;
+      width: 90%;
+      max-width: 1400px;
+      margin: auto;
+      padding: 10px;
+    }
+    .grid-item {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 1/1;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+    .grid-item.expanded {
+      grid-column: span 2;
+      grid-row: span 2;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="masonry-grid" id="grid">
+    <!-- 12 sample tiles -->
+    <div class="grid-item">1</div>
+    <div class="grid-item">2</div>
+    <div class="grid-item">3</div>
+    <div class="grid-item">4</div>
+    <div class="grid-item">5</div>
+    <div class="grid-item">6</div>
+    <div class="grid-item">7</div>
+    <div class="grid-item">8</div>
+    <div class="grid-item">9</div>
+    <div class="grid-item">10</div>
+    <div class="grid-item">11</div>
+    <div class="grid-item">12</div>
+  </div>
+
+  <script>
+    (function() {
+      const grid = document.getElementById('grid');
+      const cols = 8;
+
+      grid.querySelectorAll('.grid-item').forEach(tile => {
+        let placeholders = [];
+        let movedTiles = [];
+
+        tile.addEventListener('mouseenter', () => {
+          const items = Array.from(grid.children);
+          const idx = items.indexOf(tile);
+          const colPos = (idx + 1) % cols; // 1..7,0
+
+          // Only handle col 7 (index 7) or col 8 (index 0)
+          if ( colPos === 0) {
+            // Create a placeholder for the hovered tile
+            const ph1 = document.createElement('div');
+            ph1.className = 'grid-item placeholder';
+            ph1.style.visibility = 'hidden';
+            grid.insertBefore(ph1, tile);
+            placeholders.push({ ph: ph1, origTile: tile });
+
+            // Now move the tiles in placeholders order
+            const currentRow = Math.floor(idx / cols);
+            let insertIndex = (currentRow + 1) * cols;
+
+            // After inserting placeholders, recompute children
+            const afterPh = Array.from(grid.children);
+
+            // Move the tiles to the next row and adjust the grid
+            placeholders.forEach(({ origTile }, i) => {
+              // Insert the tiles into the next row at the proper index
+              if (insertIndex >= afterPh.length) {
+                grid.appendChild(origTile);
+              } else {
+                grid.insertBefore(origTile, afterPh[insertIndex]);
+              }
+              // Move next tile after the current one
+              insertIndex++;
+            });
+
+            // Reposition the next tile into the gap left by the first one
+            if (colPos === cols - 1) {
+              const nextTile = movedTiles[0]; // tile 8 that should move into the gap
+              const currentRow = Math.floor(idx / cols);
+              const nextRowStart = (currentRow + 1) * cols;
+              const childrenNow = Array.from(grid.children);
+              const gapIndex = nextRowStart;
+
+              if (nextTile) {
+                grid.insertBefore(nextTile, childrenNow[gapIndex]);
+              }
+            }
+          }
+
+          // Add the expanded class to the hovered tile
+          tile.classList.add('expanded');
+        });
+
+        tile.addEventListener('mouseleave', () => {
+          // Remove the expanded class
+          tile.classList.remove('expanded');
+
+          // Put everything back
+          placeholders.forEach(({ ph, origTile }) => {
+            grid.insertBefore(origTile, ph);
+            ph.remove();
+          });
+          placeholders = [];
+          movedTiles = [];
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
