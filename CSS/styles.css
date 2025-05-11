@@ -597,8 +597,7 @@ input[type="checkbox"] {
   display: none;
   margin-top: 10px;
   margin-left: 5rem;
-  width: 80%;
-  max-width: 900px;
+  width: 70%;
   height: auto;
   object-fit: contain;
   margin-bottom: 20px;
